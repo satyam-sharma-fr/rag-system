@@ -4,7 +4,6 @@ import { documents } from "@/lib/db/schema/documents";
 import { chunks } from "@/lib/db/schema/chunks";
 import { embedMany } from "@/lib/ai/embedding";
 import { chunkDocument, chunkText, TextChunk } from "./chunker";
-import { parsePdf } from "./pdf-parser";
 import { parseMarkdown } from "./markdown-parser";
 import { parseWebPage } from "./web-parser";
 
@@ -13,6 +12,8 @@ function contentHash(content: string): string {
 }
 
 export async function ingestPdf(buffer: Buffer, fileName: string) {
+  // Dynamic import to avoid loading pdf-parse at module level (DOMMatrix issue on Vercel)
+  const { parsePdf } = await import("./pdf-parser");
   const { title, pages } = await parsePdf(buffer);
   const allText = pages.map((p) => p.text).join("\n");
   const hash = contentHash(allText);

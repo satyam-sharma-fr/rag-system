@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 export interface ParsedPage {
   text: string;
   pageNumber: number;
@@ -8,26 +6,25 @@ export interface ParsedPage {
 export async function parsePdf(
   buffer: Buffer
 ): Promise<{ title: string; pages: ParsedPage[] }> {
-  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  // Dynamic import to avoid loading pdf-parse when not needed
+  const pdfParse = (await import("pdf-parse")).default;
+  const data = await pdfParse(buffer);
 
-  const textResult = await parser.getText();
-  const infoResult = await parser.getInfo();
+  // pdf-parse v1 returns all text as one string; split by form feeds for pages
+  const pageTexts = data.text.split("\f").filter((t: string) => t.trim().length > 0);
 
-  const pages: ParsedPage[] = textResult.pages.map((page) => ({
-    text: page.text.trim(),
-    pageNumber: page.num,
-  }));
-
-  const filteredPages = pages.filter((p) => p.text.length > 0);
-
-  if (filteredPages.length === 0 && textResult.text.trim()) {
-    filteredPages.push({ text: textResult.text.trim(), pageNumber: 1 });
-  }
+  const pages: ParsedPage[] =
+    pageTexts.length > 0
+      ? pageTexts.map((text: string, i: number) => ({
+          text: text.trim(),
+          pageNumber: i + 1,
+        }))
+      : data.text.trim()
+        ? [{ text: data.text.trim(), pageNumber: 1 }]
+        : [];
 
   const title =
-    infoResult.info?.Title || `PDF Document (${textResult.total} pages)`;
+    data.info?.Title || `PDF Document (${data.numpages} pages)`;
 
-  await parser.destroy();
-
-  return { title, pages: filteredPages };
+  return { title, pages };
 }
