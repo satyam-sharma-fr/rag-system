@@ -1,0 +1,23 @@
+[
+  {
+    "id": "q001",
+    "question": "What is the maximum retry count?",
+    "expected_answer": "The maximum retry count is 3.",
+    "source_document": "api-docs.pdf",
+    "source_chunk_keywords": ["retry", "maximum", "3"]
+  },
+  {
+    "id": "q002",
+    "question": "How do I authenticate with the API?",
+    "expected_answer": "Authentication is done via Bearer token in the Authorization header.",
+    "source_document": "api-docs.pdf",
+    "source_chunk_keywords": ["authenticate", "Bearer", "Authorization", "header"]
+  },
+  {
+    "id": "q003",
+    "question": "What are the rate limits?",
+    "expected_answer": "The API has a rate limit of 100 requests per minute per API key.",
+    "source_document": "api-docs.pdf",
+    "source_chunk_keywords": ["rate limit", "100", "requests", "minute"]
+  }
+]
