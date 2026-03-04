@@ -1,7 +1,9 @@
 import { embed, embedMany as aiEmbedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
 
-const embeddingModel = openai.embedding("text-embedding-3-large");
+const embeddingModel = openai.embedding("text-embedding-3-large", {
+  dimensions: 1536,
+});
 
 export async function embedQuery(text: string): Promise<number[]> {
   const { embedding } = await embed({

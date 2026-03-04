@@ -17,7 +17,7 @@ export const chunks = pgTable(
       .references(() => documents.id, { onDelete: "cascade" })
       .notNull(),
     content: text("content").notNull(),
-    embedding: vector("embedding", { dimensions: 3072 }).notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
     chunkIndex: integer("chunk_index").notNull(),
     tokenCount: integer("token_count").notNull(),
     metadata: jsonb("metadata").$type<{
@@ -31,9 +31,10 @@ export const chunks = pgTable(
       "hnsw",
       table.embedding.op("vector_cosine_ops")
     ),
-    index("chunks_content_trgm_idx")
-      .using("gin", table.content)
-      .concurrently(),
+    index("chunks_content_trgm_idx").using(
+      "gin",
+      table.content.op("gin_trgm_ops")
+    ),
   ]
 );
 
