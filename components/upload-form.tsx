@@ -28,8 +28,14 @@ export function UploadForm() {
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(text || `Server returned ${res.status}`);
+      }
+      if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
 
       setMessage({
         type: "success",
@@ -57,8 +63,14 @@ export function UploadForm() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(text || `Server returned ${res.status}`);
+      }
+      if (!res.ok) throw new Error(data.error || `Ingestion failed (${res.status})`);
 
       setMessage({
         type: "success",
