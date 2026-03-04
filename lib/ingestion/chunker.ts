@@ -1,5 +1,3 @@
-import { encoding_for_model } from "tiktoken";
-
 export interface ChunkMetadata {
   documentId?: string;
   chunkIndex: number;
@@ -16,6 +14,11 @@ export interface TextChunk {
 
 const TARGET_MAX_TOKENS = 800;
 const OVERLAP_TOKENS = 100;
+
+// Approximate token count: ~4 chars per token for English text (GPT-4o tokenizer average)
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
 
 const SEPARATORS = ["\n\n", "\n", ". ", "! ", "? ", "; ", ", ", " "];
 
@@ -49,9 +52,7 @@ export function chunkText(
     heading?: string;
   }
 ): TextChunk[] {
-  const enc = encoding_for_model("gpt-4o");
   const chunks: TextChunk[] = [];
-
   const segments = recursiveSplit(text.trim(), 0);
 
   let currentChunk = "";
@@ -59,7 +60,7 @@ export function chunkText(
   let chunkIndex = 0;
 
   for (const segment of segments) {
-    const segmentTokens = enc.encode(segment).length;
+    const segmentTokens = estimateTokens(segment);
 
     if (currentTokens + segmentTokens > TARGET_MAX_TOKENS && currentChunk) {
       chunks.push({
@@ -74,9 +75,9 @@ export function chunkText(
       });
       chunkIndex++;
 
-      const overlapText = getOverlapText(currentChunk, enc);
+      const overlapText = getOverlapText(currentChunk);
       currentChunk = overlapText + segment;
-      currentTokens = enc.encode(currentChunk).length;
+      currentTokens = estimateTokens(currentChunk);
     } else {
       currentChunk += segment;
       currentTokens += segmentTokens;
@@ -86,7 +87,7 @@ export function chunkText(
   if (currentChunk.trim()) {
     chunks.push({
       content: currentChunk.trim(),
-      tokenCount: enc.encode(currentChunk.trim()).length,
+      tokenCount: estimateTokens(currentChunk.trim()),
       metadata: {
         chunkIndex,
         pageNumber: options?.pageNumber,
@@ -96,18 +97,14 @@ export function chunkText(
     });
   }
 
-  enc.free();
   return chunks;
 }
 
-function getOverlapText(
-  text: string,
-  enc: ReturnType<typeof encoding_for_model>
-): string {
-  const tokens = enc.encode(text);
-  if (tokens.length <= OVERLAP_TOKENS) return text;
-  const overlapTokens = tokens.slice(-OVERLAP_TOKENS);
-  return new TextDecoder().decode(enc.decode(overlapTokens));
+function getOverlapText(text: string): string {
+  // Take approximately OVERLAP_TOKENS worth of characters from the end
+  const overlapChars = OVERLAP_TOKENS * 4;
+  if (text.length <= overlapChars) return text;
+  return text.slice(-overlapChars);
 }
 
 export function chunkDocument(
